@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>HOANGDZ AI - ULTIMATE</title>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --neon: #00f2ff;
+            --win: #00ff88;
+            --loss: #ff2d55;
+            --tai: #ff9d00;
+            --xiu: #ffffff;
+            --bg: #01080e;
+        }
+
+        body {
+            margin: 0; background: var(--bg); color: white;
+            font-family: 'Share Tech Mono'; display: flex;
+            justify-content: center; align-items: center; min-height: 100vh;
+            overflow: hidden; touch-action: none;
+        }
+
+        /* Nền hiệu ứng lưới (Grid) */
+        .grid-bg {
+            position: fixed; width: 200%; height: 200%;
+            background-image: linear-gradient(rgba(0, 242, 255, 0.05) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(0, 242, 255, 0.05) 1px, transparent 1px);
+            background-size: 30px 30px; transform: rotateX(60deg);
+            bottom: -50%; animation: grid-move 10s linear infinite;
+        }
+        @keyframes grid-move { from { background-position: 0 0; } to { background-position: 0 300px; } }
+
+        .container {
+            width: 90%; max-width: 370px; background: rgba(1, 10, 18, 0.95);
+            border: 2px solid var(--neon); border-radius: 2px;
+            padding: 20px; box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
+            position: relative; z-index: 10;
+        }
+
+        /* Tiêu đề hiệu ứng Glitch */
+        .title {
+            font-family: Orbitron; text-align: center; font-size: 26px;
+            font-weight: 900; color: #fff; letter-spacing: 4px;
+            text-shadow: 2px 2px var(--loss), -2px -2px var(--neon);
+            margin-bottom: 20px;
+        }
+
+        /* Thanh Nghiêng Dự Đoán */
+        .bias-box { margin-bottom: 20px; background: rgba(255,255,255,0.02); padding: 10px; border: 1px solid #1a3a4a; }
+        .bias-labels { display: flex; justify-content: space-between; font-family: Orbitron; font-size: 11px; margin-bottom: 6px; }
+        .bias-bar { height: 8px; background: #000; display: flex; overflow: hidden; border-radius: 4px; }
+        #bar-tai { width: 50%; background: var(--tai); transition: 1s cubic-bezier(0.1, 0.7, 0.1, 1); box-shadow: 0 0 10px var(--tai); }
+        #bar-xiu { width: 50%; background: var(--xiu); transition: 1s cubic-bezier(0.1, 0.7, 0.1, 1); box-shadow: 0 0 10px var(--xiu); }
+
+        /* Nhập liệu & Phân tích */
+        .input-area { position: relative; margin-bottom: 15px; }
+        input {
+            width: 100%; padding: 16px; background: #000; border: 1px solid #1a3a4a;
+            color: var(--neon); text-align: center; font-size: 14px;
+            box-sizing: border-box; outline: none; transition: 0.3s;
+        }
+        input:focus { border-color: var(--neon); box-shadow: 0 0 15px rgba(0, 242, 255, 0.3); }
+
+        .btn-analyze {
+            width: 100%; padding: 18px; border: none; background: var(--neon);
+            color: #000; font-family: Orbitron; font-weight: 900;
+            cursor: pointer; text-transform: uppercase; letter-spacing: 2px;
+            clip-path: polygon(5% 0, 100% 0, 100% 75%, 95% 100%, 0 100%, 0 25%);
+        }
+
+        /* Kết quả */
+        .result-window {
+            display: none; text-align: center; margin-top: 20px;
+            padding: 20px; border: 1px dashed var(--neon); animation: fadeIn 0.3s;
+        }
+        .res-text { font-size: 60px; font-family: Orbitron; font-weight: 900; margin-bottom: 15px; }
+        
+        .confirm-btns { display: flex; gap: 10px; }
+        .btn-s { flex: 1; padding: 12px; border: none; font-family: Orbitron; font-weight: 700; cursor: pointer; border-radius: 4px; }
+        .btn-win { background: var(--win); color: #000; }
+        .btn-loss { background: var(--loss); color: #fff; }
+
+        /* Lịch sử vĩnh viễn */
+        .history-panel {
+            margin-top: 20px; border-top: 1px solid #1a3a4a;
+            max-height: 120px; overflow-y: auto; padding-top: 10px;
+        }
+        .h-row {
+            display: flex; justify-content: space-between; font-size: 11px;
+            padding: 6px 0; border-bottom: 1px solid rgba(26, 58, 74, 0.5);
+            color: #8da6b5;
+        }
+
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
+</head>
+<body>
+
+<div class="grid-bg"></div>
+
+<div class="container">
+    <div class="title">HOANGDZ AI</div>
+    
+    <div class="bias-box">
+        <div class="bias-labels">
+            <span style="color:var(--tai)">TÀI <span id="p-tai">50%</span></span>
+            <span style="color:var(--xiu)">XỈU <span id="p-xiu">50%</span></span>
+        </div>
+        <div class="bias-bar">
+            <div id="bar-tai"></div>
+            <div id="bar-xiu"></div>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <input type="text" id="md5Input" placeholder="CHẠM ĐỂ DÁN MÃ MD5" readonly onclick="handlePaste()">
+    </div>
+
+    <button class="btn-analyze" id="mainBtn" onclick="runAI()">Bắt đầu quét dữ liệu</button>
+
+    <div class="result-window" id="resultWindow">
+        <div id="resVal" class="res-text">--</div>
+        <div class="confirm-btns">
+            <button class="btn-s btn-win" onclick="record(true)">THẮNG</button>
+            <button class="btn-s btn-loss" onclick="record(false)">THUA</button>
+        </div>
+    </div>
+
+    <div class="history-panel" id="historyPanel"></div>
+
+    <div style="display: flex; justify-content: space-between; margin-top: 15px;">
+        <span id="winRate" style="font-size: 10px; color: var(--win);">WINRATE: 0%</span>
+        <span onclick="clearStorage()" style="font-size: 10px; color: var(--loss); cursor: pointer;">XÓA DỮ LIỆU</span>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script>
+    let stats = JSON.parse(localStorage.getItem('hoangdz_ai_v3')) || { total: 0, wins: 0, history: [] };
+    let currentPredict = "";
+
+    // Tải dữ liệu cũ khi mở trang
+    window.onload = () => {
+        updateUI();
+        stats.history.forEach(item => addRowToUI(item.p, item.r, item.w));
+    };
+
+    async function handlePaste() {
+        try {
+            const text = await navigator.clipboard.readText();
+            if (text.length > 5) {
+                document.getElementById("md5Input").value = text;
+                document.getElementById("md5Input").style.borderColor = "var(--neon)";
+            }
+        } catch (e) {
+            document.getElementById("md5Input").readOnly = false;
+            document.getElementById("md5Input").placeholder = "NHẬP TAY MÃ MD5...";
+        }
+    }
+
+    function runAI() {
+        const val = document.getElementById("md5Input").value;
+        if (!val) return handlePaste();
+
+        document.getElementById("mainBtn").innerText = "ĐANG PHÂN TÍCH...";
+        
+        setTimeout(() => {
+            let hash = CryptoJS.SHA256(val + stats.total).toString();
+            let seed = parseInt(hash.slice(-3), 16) % 100;
+            
+            // Logic thanh nghiêng
+            let tRate = seed > 50 ? seed : 100 - seed;
+            let xRate = 100 - tRate;
+            if (seed % 3 === 0) [tRate, xRate] = [xRate, tRate]; // Đảo cầu ngẫu nhiên
+
+            document.getElementById("bar-tai").style.width = tRate + "%";
+            document.getElementById("bar-xiu").style.width = xRate + "%";
+            document.getElementById("p-tai").innerText = tRate + "%";
+            document.getElementById("p-xiu").innerText = xRate + "%";
+
+            currentPredict = tRate > xRate ? "TÀI" : "XỈU";
+            const resDiv = document.getElementById("resVal");
+            resDiv.innerText = currentPredict;
+            resDiv.style.color = currentPredict === "TÀI" ? "var(--tai)" : "var(--xiu)";
+            
+            document.getElementById("resultWindow").style.display = "block";
+            document.getElementById("mainBtn").style.display = "none";
+            
+            if(navigator.vibrate) navigator.vibrate([100, 50, 100]);
+        }, 800);
+    }
+
+    function record(isWin) {
+        stats.total++;
+        if (isWin) stats.wins++;
+        
+        const data = { p: stats.total, r: currentPredict, w: isWin };
+        stats.history.push(data);
+        if (stats.history.length > 20) stats.history.shift();
+        
+        localStorage.setItem('hoangdz_ai_v3', JSON.stringify(stats));
+        
+        addRowToUI(data.p, data.r, data.w);
+        updateUI();
+
+        document.getElementById("resultWindow").style.display = "none";
+        document.getElementById("mainBtn").style.display = "block";
+        document.getElementById("mainBtn").innerText = "Tiếp tục quét";
+        document.getElementById("md5Input").value = "";
+    }
+
+    function updateUI() {
+        const rate = stats.total === 0 ? 0 : ((stats.wins / stats.total) * 100).toFixed(1);
+        document.getElementById("winRate").innerText = `WINRATE: ${rate}%`;
+    }
+
+    function addRowToUI(p, r, w) {
+        const row = document.createElement("div");
+        row.className = "h-row";
+        row.innerHTML = `<span>PHIÊN #${p}</span> <span>${r}</span> <span style="color:${w ? 'var(--win)' : 'var(--loss)'}">${w ? 'WIN' : 'LOSS'}</span>`;
+        document.getElementById("historyPanel").prepend(row);
+    }
+
+    function clearStorage() {
+        if (confirm("Xóa vĩnh viễn toàn bộ lịch sử?")) {
+            localStorage.removeItem('hoangdz_ai_v3');
+            location.reload();
+        }
+    }
+</script>
+</body>
+</html>
